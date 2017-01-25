@@ -8,12 +8,31 @@
  */
 
 const { clamp, randomPoint, permutation } = require('./gameutil');
-
+const redis = require ('redis').createClient();
 const WIDTH = 64;
 const HEIGHT = 64;
 const MAX_PLAYER_NAME_LENGTH = 32;
 const NUM_COINS = 100;
 
+
+redis.on("error", function (error) {
+  console.error(`Error: ${error}`);
+});
+
+/*
+  For testing:
+  use redis.select()
+  write integration tests
+
+  start redis instance
+  flush db
+  insert data
+  test data
+  flush db again when finished
+
+  have game play on 0
+  have tests on a different index
+*/
 
 // A KEY-VALUE "DATABASE" FOR THE GAME STATE.
 //
@@ -30,19 +49,29 @@ const NUM_COINS = 100;
 // coins            hash         { "<row>,<col>": coinvalue }
 // usednames        set          all used names, to check quickly if a name has been used
 //
+
+// replace this object with Redis
 const database = {
   scores: {},
   usednames: new Set(),
   coins: {},
 };
 
-exports.addPlayer = (name) => {
+exports.addPlayer = (name) => {                                     // sys.member check, replace with Redis
   if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || database.usednames.has(name)) {
     return false;
   }
+  redis.sadd('usednames', name);
   database.usednames.add(name);
+
+  redis.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
   database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
+  // ^^^ SADD call
+
+  redis.zadd('scores', [name, 0]);
   database.scores[name] = 0;
+  // ^^^ ZADD sorted set
+
   return true;
 };
 
@@ -59,11 +88,12 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
-  const positions = Object.entries(database)
+  const positions = Object.entries(database) // iterator over key-value pairs
     .filter(([key]) => key.startsWith('player:'))
-    .map(([key, value]) => [key.substring(7), value]);
+    .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
   const scores = Object.entries(database.scores);
-  scores.sort(([, v1], [, v2]) => v1 < v2);
+  scores.sort(([, v1], [, v2]) => v1 < v2); // pass comparator to the sort(), sort descending order
+  // ZREVRANGE equivalent
   return {
     positions,
     scores,

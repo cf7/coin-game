@@ -32,7 +32,7 @@ io.on('connection', (socket) => {
       socket.removeListener('name', nameListener);
       socket.on('move', (direction) => {
         game.move(direction, trimmedName);
-        io.emit('state', game.state());
+        io.emit('state', game.state()); // state() returns everything, scores, players, moves - current state of the game
       });
     } else {
       io.to(socket.id).emit('badname', trimmedName);
@@ -40,6 +40,8 @@ io.on('connection', (socket) => {
   };
   socket.on('name', nameListener);
 });
+// io.on() means listen from everyone 
+// socket.on() means listen from a specific client
 
 // It begins (https://xkcd.com/1656/)
 const port = process.env.PORT || 3000;
