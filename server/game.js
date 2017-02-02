@@ -80,6 +80,7 @@ function placeCoins() {
     const coinValue = (i < 50) ? 1 : (i < 75) ? 2 : (i < 95) ? 5 : 10;
     const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`;
     database.coins[index] = coinValue;
+    redis.hset("coins", index, coinValue, redis.print);
   });
 }
 
@@ -122,3 +123,7 @@ exports.move = (direction, name) => {
 };
 
 placeCoins();
+
+redis.smembers("usednames", function (error, object) {
+  console.log(object);
+});

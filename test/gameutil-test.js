@@ -1,3 +1,19 @@
+
+/*
+  For testing:
+  use redis.select()
+  write integration tests
+
+  start redis instance
+  flush db
+  insert data
+  test data
+  flush db again when finished
+
+  have game play on 0
+  have tests on a different index
+*/
+
 const gameutil = require('../server/gameutil');
 const assert = require('assert');
 
