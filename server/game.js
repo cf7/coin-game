@@ -64,7 +64,7 @@ exports.addPlayer = (name) => {                                     // sys.membe
   redis.sadd('usednames', name);
   database.usednames.add(name);
 
-  redis.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
+  redis.hset('players', `player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
   database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
   // ^^^ SADD call
 
@@ -89,11 +89,17 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
-  const positions = Object.entries(database) // iterator over key-value pairs
-    .filter(([key]) => key.startsWith('player:'))
-    .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
+  console.log(Object.entries(database));
+  let positions = [];
+  redis.hgetall('players', function (error, players) {
+      positions = Object.entries(players) // iterator over key-value pairs
+                  .filter(([key]) => key.startsWith('player:'))
+                  .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
+      console.log(positions);
+  });
+  
   const scores = Object.entries(database.scores);
-  scores.sort(([, v1], [, v2]) => v1 < v2); // pass comparator to the sort(), sort descending order
+  scores.sort(([, v1], [, v2]) => v2 - v1); // pass comparator to the sort(), sort descending order
   // ZREVRANGE equivalent
   return {
     positions,
@@ -107,8 +113,10 @@ exports.move = (direction, name) => {
   if (delta) {
     const playerKey = `player:${name}`;
     const [x, y] = database[playerKey].split(',');
+    redis.get(playerKey, console.log);
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
     const value = database.coins[`${newX},${newY}`];
+    redis.hget('coins', `${newX},${newY}`, console.log);
     if (value) {
       database.scores[name] += value;
       delete database.coins[`${newX},${newY}`];
