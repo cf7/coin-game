@@ -64,11 +64,11 @@ exports.addPlayer = (name) => {                                     // sys.membe
   redis.sadd('usednames', name);
   database.usednames.add(name);
 
-  redis.hset('players', `player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
+  redis.hset('players', `${name}`, randomPoint(WIDTH, HEIGHT).toString());
   database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
   // ^^^ SADD call
 
-  redis.zadd('scores', [name, 0]);
+  redis.hset('scores', name, 0);
   database.scores[name] = 0;
   // ^^^ ZADD sorted set
 
@@ -89,18 +89,27 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = () => {
-  console.log(Object.entries(database));
-  let positions = [];
+  // let positions = [];
+  const positions = Object.entries(database) // iterator over key-value pairs
+                          .filter(([key]) => key.startsWith('player:'))
+                          .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
   redis.hgetall('players', function (error, players) {
-      positions = Object.entries(players) // iterator over key-value pairs
-                  .filter(([key]) => key.startsWith('player:'))
-                  .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
-      console.log(positions);
+      // positions = Object.entries(players) // iterator over key-value pairs
+      //             .filter(([key]) => key.startsWith('player:'))
+      //             .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
+      console.log("players");
+      console.log(players);
   });
   
+
   const scores = Object.entries(database.scores);
   scores.sort(([, v1], [, v2]) => v2 - v1); // pass comparator to the sort(), sort descending order
   // ZREVRANGE equivalent
+  redis.hgetall('scores', function (error, scores) {
+      console.log("scores");
+      console.log(scores);
+  });
+
   return {
     positions,
     scores,
@@ -113,17 +122,29 @@ exports.move = (direction, name) => {
   if (delta) {
     const playerKey = `player:${name}`;
     const [x, y] = database[playerKey].split(',');
-    redis.get(playerKey, console.log);
+    redis.hget('players', playerKey, console.log);
     const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
     const value = database.coins[`${newX},${newY}`];
     redis.hget('coins', `${newX},${newY}`, console.log);
     if (value) {
+      // hget scores name
+      // hincrby scores name incrvalue
+      redis.hincrby('scores', name, value);
       database.scores[name] += value;
+      // hdel coins "x,y"
+      redis.hdel('coins', `${newX},${newY}`);
       delete database.coins[`${newX},${newY}`];
     }
+    // hset players 'name' 'x,y'
+    // remove substring() after switch to Redis
+    redis.hset('players', playerKey.substring(7), `${newX},${newY}`);
     database[playerKey] = `${newX},${newY}`;
 
     // When all coins collected, generate a new batch.
+    redis.hgetall('coins', function (error, coins) { 
+        console.log(coins);
+    });
+
     if (Object.keys(database.coins).length === 0) {
       placeCoins();
     }
