@@ -68,7 +68,7 @@ exports.addPlayer = (name) => {                                     // sys.membe
   database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
   // ^^^ SADD call
 
-  redis.hset('scores', name, 0);
+  redis.zadd('scores', name, 0);
   database.scores[name] = 0;
   // ^^^ ZADD sorted set
 
@@ -105,7 +105,10 @@ exports.state = () => {
   const scores = Object.entries(database.scores);
   scores.sort(([, v1], [, v2]) => v2 - v1); // pass comparator to the sort(), sort descending order
   // ZREVRANGE equivalent
-  redis.hgetall('scores', function (error, scores) {
+  redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], function (error, scores) {
+      if (error) {
+        throw error;
+      }
       console.log("scores");
       console.log(scores);
   });
@@ -129,7 +132,7 @@ exports.move = (direction, name) => {
     if (value) {
       // hget scores name
       // hincrby scores name incrvalue
-      redis.hincrby('scores', name, value);
+      redis.zincrby('scores', value, name);
       database.scores[name] += value;
       // hdel coins "x,y"
       redis.hdel('coins', `${newX},${newY}`);

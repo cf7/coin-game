@@ -17,6 +17,12 @@
 const gameutil = require('../server/gameutil');
 const assert = require('assert');
 
+describe('Redis' () => {
+  it('stores player names', () => {
+    
+  });
+});
+
 describe('The clamp function', () => {
   it('accepts values in range', () => {
     assert.equal(gameutil.clamp(7, -10, 20), 7);
@@ -30,6 +36,7 @@ describe('The clamp function', () => {
     assert.equal(gameutil.clamp(7, 3, 5), 5);
   });
 });
+
 
 describe('The randomPoint function', () => {
   it('generates only acceptable points', () => {
