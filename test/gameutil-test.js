@@ -16,7 +16,6 @@
 
 const gameutil = require('../server/gameutil');
 const assert = require('assert');
-const game = require('./server/game');
 
 describe('Redis', () => {
   it('stores player names', () => {
@@ -98,5 +97,24 @@ describe('The permutation function', () => {
     assert.ok(set.has('1,2,0'));
     assert.ok(set.has('2,0,1'));
     assert.ok(set.has('2,1,0'));
+  });
+});
+
+describe('The evenArrayToObject function', () => {
+  it('converts an empty array to an empty object', () => {
+    assert.ok(gameutil.evenArrayToObject([]));
+  });
+
+  it('returns null when not given an even number of elements', () => {
+    assert.ok(gameutil.evenArrayToObject(['name1', '1', 'name2', '2', 'name3', '3']));
+    assert.ok(!gameutil.evenArrayToObject(['name1', '1', 'name2', '2', 'name3']));
+    assert.ok(!gameutil.evenArrayToObject(['name2', '2', 'name3']));
+  });
+
+  it('includes all elements of the original array in the result object', () => {
+    let result = gameutil.evenArrayToObject(['name1', '1', 'name2', '2', 'name3', '3']);
+    assert.equal(result.name1, 1);
+    assert.equal(result.name2, 2);
+    assert.equal(result.name3, 3);
   });
 });

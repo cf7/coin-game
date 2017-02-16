@@ -7,7 +7,7 @@
  *   - state()
  */
 
-const { clamp, randomPoint, permutation } = require('./gameutil');
+const { clamp, randomPoint, permutation, evenArrayToObject } = require('./gameutil');
 const redis = require ('redis').createClient();
 const WIDTH = 64;
 const HEIGHT = 64;
@@ -125,6 +125,8 @@ exports.state = (callback) => {
       console.log("scores");
       console.log(scores);
 
+      scores = evenArrayToObject(scores);
+      
       redis.hgetall('coins', (error, coins) => {
           if (error) {
             callback(error);

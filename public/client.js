@@ -41,7 +41,8 @@
   // the table. We trust the server to send us the scores in the correct sorted order.
   function drawScores(gameState) {
     document.querySelectorAll('tr.score').forEach(e => e.remove());
-    gameState.scores.forEach(([name, score]) => {
+
+    Object.entries(gameState.scores).forEach(([name, score]) => {
       const tableRow = document.createElement('tr');
       tableRow.innerHTML = `<td>${name}<td>${score}`;
       tableRow.className = 'score';
@@ -51,6 +52,9 @@
 
   function renderBoard(gameState) {
     console.log(gameState);
+    console.log(Object.entries(gameState.positions));
+    console.log(Object.entries(gameState.coins));
+    console.log(Object.entries(gameState.scores));
     clearCanvas();
     drawCoins(gameState);
     drawPlayers(gameState);

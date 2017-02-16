@@ -14,3 +14,17 @@ exports.permutation = (n) => {
   }
   return array;
 };
+
+exports.evenArrayToObject = (array) => {
+    if (array.length === 0) {
+        return {};
+    } else if ((array.length % 2) !== 0) {
+        return null;
+    } else {
+      var result = {};
+      for (var i = 0; i + 2 <= array.length; i += 2) {
+        result[array[i]] = array[i + 1];
+      }
+      return result;
+    }
+};
