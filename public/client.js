@@ -51,16 +51,18 @@
   }
 
   function renderBoard(gameState) {
-    console.log(gameState);
-    console.log(Object.entries(gameState.positions));
-    console.log(Object.entries(gameState.coins));
-    console.log(Object.entries(gameState.scores));
     clearCanvas();
     drawCoins(gameState);
     drawPlayers(gameState);
     drawScores(gameState);
   }
 
+  function endGame(gameState) {
+    clearCanvas();
+    drawCoins(gameState);
+    drawScores(gameState);
+  }
+  
   // When the join button is clicked, send the name to the server in a `name` message.
   document.querySelector('button').addEventListener('click', () => {
     socket.emit('name', document.querySelector('#name').value);
@@ -75,7 +77,9 @@
       e.preventDefault();
     }
   });
-  
+
+  socket.on('gameover', endGame);
+
   // When the server tells us the name is bad, render an error message.
   socket.on('badname', (name) => {
     document.querySelector('.error').innerHTML = `Name ${name} too short, too long, or taken`;

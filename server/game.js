@@ -98,17 +98,42 @@ function placeCoins() {
 exports.state = (callback) => {
   redis.keys('player:*', (error, players) => {
     if (error) {
+      console.log("here1");
       callback(error);
     }
-    redis.mget(players, (error, values) => {
-      if (error) {
-        callback(error);
-      }
-      console.log("positions");
-      console.log(values);
-      let positions = zip(players, values).map(([key, value]) => [key.substring(7), value]);
+
+    if (players.length !== 0) {
+      redis.mget(players, (error, values) => {
+        if (error) {
+          console.log("here2");
+          callback(error);
+        }
+        console.log("positions");
+        console.log(values);
+        let positions = zip(players, values).map(([key, value]) => [key.substring(7), value]);
+        redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
+          if (error) {
+            console.log("here3");
+            callback(error);
+          }
+          console.log("scores");
+          console.log(scores);
+
+          scores = evenArrayToObject(scores);
+
+          redis.hgetall('coins', (error, coins) => {
+              if (error) {
+                console.log("here4");
+                callback(error);
+              }
+              return callback(null, { positions, scores, coins });
+          });
+        });
+      });
+    } else {
       redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
         if (error) {
+          console.log("here3");
           callback(error);
         }
         console.log("scores");
@@ -118,12 +143,13 @@ exports.state = (callback) => {
 
         redis.hgetall('coins', (error, coins) => {
             if (error) {
+              console.log("here4");
               callback(error);
             }
-            return callback(null, { positions, scores, coins });
+            return callback(null, { scores, coins });
         });
       });
-    });
+    }
   });
 };
 

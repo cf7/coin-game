@@ -82,7 +82,11 @@ io.on('connection', (socket) => {
               if (error) {
                 throw error;
               }
-              io.emit('state', state);
+              if (!state.positions) {
+                io.emit('gameover', state);
+              } else {
+                io.emit('state', state);
+              }
             });
           }); 
           // io.emit('state', game.state()); // state() returns everything, scores, players, moves - current state of the game
