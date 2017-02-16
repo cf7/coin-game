@@ -75,7 +75,7 @@
       e.preventDefault();
     }
   });
-
+  
   // When the server tells us the name is bad, render an error message.
   socket.on('badname', (name) => {
     document.querySelector('.error').innerHTML = `Name ${name} too short, too long, or taken`;

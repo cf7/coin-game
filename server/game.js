@@ -149,6 +149,7 @@ exports.move = (direction, name, callback) => {
               redis.hdel('coins', `${newX},${newY}`);
             }
             redis.set(`player:${name}`, `${newX},${newY}`);
+            redis.expire(`player:${name}`, 30);
 
             // When all coins collected, generate a new batch.
             redis.hgetall('coins', (error, coins) => {
@@ -161,6 +162,8 @@ exports.move = (direction, name, callback) => {
               callback(null);
             }); 
         });
+      } else {
+        callback(null);
       }
     });
   }
