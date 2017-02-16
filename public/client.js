@@ -50,6 +50,7 @@
   }
 
   function renderBoard(gameState) {
+    console.log(gameState);
     clearCanvas();
     drawCoins(gameState);
     drawPlayers(gameState);

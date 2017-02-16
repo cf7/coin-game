@@ -16,10 +16,11 @@
 
 const gameutil = require('../server/gameutil');
 const assert = require('assert');
+const game = require('./server/game');
 
-describe('Redis' () => {
+describe('Redis', () => {
   it('stores player names', () => {
-    
+      
   });
 });
 
