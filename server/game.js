@@ -54,12 +54,6 @@ redis.on("error", function (error) {
 // usednames        set          all used names, to check quickly if a name has been used
 //
 
-// replace this object with Redis
-// const database = {
-//   scores: {},
-//   usednames: new Set(),
-//   coins: {},
-// };
 
 exports.addPlayer = (name, callback) => {     
   
@@ -70,13 +64,10 @@ exports.addPlayer = (name, callback) => {
       callback(null, false);
     } else {
       redis.sadd('usednames', name);
-      // database.usednames.add(name);
 
       redis.hset('players', `${name}`, randomPoint(WIDTH, HEIGHT).toString());
-      // database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
 
       redis.zadd('scores', 0, name);
-      // database.scores[name] = 0;
       
       callback(null, true);
     }
@@ -88,7 +79,6 @@ function placeCoins() {
   permutation(WIDTH * HEIGHT).slice(0, NUM_COINS).forEach((position, i) => {
     const coinValue = (i < 50) ? 1 : (i < 75) ? 2 : (i < 95) ? 5 : 10;
     const index = `${Math.floor(position / WIDTH)},${Math.floor(position % WIDTH)}`;
-    // database.coins[index] = coinValue;
     coins.push(index);
     coins.push(coinValue);
   });
@@ -106,11 +96,6 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = (callback) => {
-  // let positions = [];
-  // const positions = Object.entries(database) // iterator over key-value pairs
-  //                         .filter(([key]) => key.startsWith('player:'))
-  //                         .map(([key, value]) => [key.substring(7), value]); // remove 'player:'
-
   redis.hgetall('players', (error, players) => {
     if (error) {
       callback(error);
@@ -126,7 +111,7 @@ exports.state = (callback) => {
       console.log(scores);
 
       scores = evenArrayToObject(scores);
-      
+
       redis.hgetall('coins', (error, coins) => {
           if (error) {
             callback(error);
@@ -135,16 +120,6 @@ exports.state = (callback) => {
       });
     });
   });
-
-  // const scores = Object.entries(database.scores);
-  // scores.sort(([, v1], [, v2]) => v2 - v1); // pass comparator to the sort(), sort descending order
-
-  
-  // return {
-  //   positions,
-  //   scores,
-  //   coins: database.coins,
-  // };
 };
 
 exports.move = (direction, name, callback) => {
@@ -153,8 +128,6 @@ exports.move = (direction, name, callback) => {
   if (delta) {
     console.log("NAME!!!!!");
     console.log(name);
-    // const playerKey = `player:${name}`;
-    // const [x, y] = database[playerKey].split(',');
     redis.hget('players', name, (error, position) => {
       if (error) {
         callback(error);
@@ -162,30 +135,21 @@ exports.move = (direction, name, callback) => {
       if (position) {
         const [x, y] = position.split(',');
         const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
-        // const value = database.coins[`${newX},${newY}`];
         redis.hget('coins', `${newX},${newY}`, (error, value) => {
             if (error) {
               callback(error);
             }
             if (value) {
-              // hget scores name
-              // hincrby scores name incrvalue
               redis.zincrby('scores', value, name);
-              // database.scores[name] += value;
               redis.hdel('coins', `${newX},${newY}`);
-              // delete database.coins[`${newX},${newY}`];
             }
-            // hset players 'name' 'x,y'
-            // remove substring() after switch to Redis
             redis.hset('players', name, `${newX},${newY}`);
-            // database[playerKey] = `${newX},${newY}`;
 
             // When all coins collected, generate a new batch.
             redis.hgetall('coins', (error, coins) => {
               if (error) {
                 callback(error);
               } 
-              // console.log(coins);
               if (Object.keys(coins).length === 0) {
                 placeCoins();
               }
