@@ -24,7 +24,7 @@
   }
 
   function drawPlayers(gameState) {
-    Object.entries(gameState.positions).forEach(([name, position]) => {
+    gameState.positions.forEach(([name, position]) => {
       fillCell(...position.split(','), name[0].toUpperCase(), 'white', '#60c');
     });
   }

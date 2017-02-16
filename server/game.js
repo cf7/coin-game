@@ -7,7 +7,7 @@
  *   - state()
  */
 
-const { clamp, randomPoint, permutation, evenArrayToObject } = require('./gameutil');
+const { clamp, randomPoint, permutation, zip, evenArrayToObject } = require('./gameutil');
 const redis = require ('redis').createClient();
 const WIDTH = 64;
 const HEIGHT = 64;
@@ -65,7 +65,7 @@ exports.addPlayer = (name, callback) => {
     } else {
       redis.sadd('usednames', name);
 
-      redis.hset('players', `${name}`, randomPoint(WIDTH, HEIGHT).toString());
+      redis.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
 
       redis.zadd('scores', 0, name);
       
@@ -96,27 +96,32 @@ function placeCoins() {
 // Note that we return the scores in sorted order, so the client just has to iteratively
 // walk through an array of name-score pairs and render them.
 exports.state = (callback) => {
-  redis.hgetall('players', (error, players) => {
+  redis.keys('player:*', (error, players) => {
     if (error) {
       callback(error);
     }
-    console.log("players");
-    console.log(players);
-    let positions = players;
-    redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
+    redis.mget(players, (error, values) => {
       if (error) {
         callback(error);
       }
-      console.log("scores");
-      console.log(scores);
+      console.log("positions");
+      console.log(values);
+      let positions = zip(players, values).map(([key, value]) => [key.substring(7), value]);
+      redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
+        if (error) {
+          callback(error);
+        }
+        console.log("scores");
+        console.log(scores);
 
-      scores = evenArrayToObject(scores);
+        scores = evenArrayToObject(scores);
 
-      redis.hgetall('coins', (error, coins) => {
-          if (error) {
-            callback(error);
-          }
-          return callback(null, { positions, scores, coins });
+        redis.hgetall('coins', (error, coins) => {
+            if (error) {
+              callback(error);
+            }
+            return callback(null, { positions, scores, coins });
+        });
       });
     });
   });
@@ -128,7 +133,7 @@ exports.move = (direction, name, callback) => {
   if (delta) {
     console.log("NAME!!!!!");
     console.log(name);
-    redis.hget('players', name, (error, position) => {
+    redis.get(`player:${name}`, (error, position) => {
       if (error) {
         callback(error);
       }
@@ -143,7 +148,7 @@ exports.move = (direction, name, callback) => {
               redis.zincrby('scores', value, name);
               redis.hdel('coins', `${newX},${newY}`);
             }
-            redis.hset('players', name, `${newX},${newY}`);
+            redis.set(`player:${name}`, `${newX},${newY}`);
 
             // When all coins collected, generate a new batch.
             redis.hgetall('coins', (error, coins) => {
