@@ -20,6 +20,8 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+
+  /** /
   game.state((error, state) => {
       if (error) {
         console.error(error);
@@ -48,28 +50,47 @@ io.on('connection', (socket) => {
       console.log(state);
     });
   });
+  /**/
+
   // When first connected, don't accept any messages except `name`. Keep accepting name
   // messages until a name is accepted. When a name is finally accepted, send a `welcome`
   // message and a the current game state, "turn off" the `name` message listener, then
   // start accepting `move` messages.
 
-  /** /
-  const nameListener = (name) => {
-    const trimmedName = name.trim();
-    if (game.addPlayer(trimmedName)) {
-      io.to(socket.id).emit('welcome');
-      io.emit('state', game.state());
-      socket.removeListener('name', nameListener);
-      socket.on('move', (direction) => {
-        game.move(direction, trimmedName);
-        io.emit('state', game.state()); // state() returns everything, scores, players, moves - current state of the game
-      });
-    } else {
-      io.to(socket.id).emit('badname', trimmedName);
-    }
-  };
-  socket.on('name', nameListener);
   /**/
+    const nameListener = (name) => {
+      const trimmedName = name.trim();
+      game.addPlayer(trimmedName, (error, result) => {
+        if (!result) {
+          io.to(socket.id).emit('badname', trimmedName);
+          return;
+        }
+        io.to(socket.id).emit('welcome');
+        game.state((error, state) => {
+          if (error) {
+            throw error;
+          }
+          io.emit('state', state);
+        });
+        socket.removeListener('name', nameListener);
+        socket.on('move', (direction) => {
+          game.move(direction, trimmedName, (error) => {
+            if (error) {
+              throw error;
+            }
+            game.state((error, state) => {
+              if (error) {
+                throw error;
+              }
+              io.emit('state', state);
+            });
+          }); 
+          // io.emit('state', game.state()); // state() returns everything, scores, players, moves - current state of the game
+        });
+      });
+    };
+    socket.on('name', nameListener);
+    /**/
 });
 
 // io.on() means listen from everyone 

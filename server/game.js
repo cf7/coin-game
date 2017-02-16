@@ -55,11 +55,11 @@ redis.on("error", function (error) {
 //
 
 // replace this object with Redis
-const database = {
-  scores: {},
-  usednames: new Set(),
-  coins: {},
-};
+// const database = {
+//   scores: {},
+//   usednames: new Set(),
+//   coins: {},
+// };
 
 exports.addPlayer = (name, callback) => {     
   
@@ -160,7 +160,7 @@ exports.move = (direction, name, callback) => {
       if (position) {
         const [x, y] = position.split(',');
         const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
-        const value = database.coins[`${newX},${newY}`];
+        // const value = database.coins[`${newX},${newY}`];
         redis.hget('coins', `${newX},${newY}`, (error, value) => {
             if (error) {
               callback(error);
