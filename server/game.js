@@ -8,7 +8,8 @@
  */
 
 const { clamp, randomPoint, permutation, zip, evenArrayToObject } = require('./gameutil');
-const redis = require ('redis').createClient();
+const redis = require('redis').createClient();
+
 const WIDTH = 64;
 const HEIGHT = 64;
 const MAX_PLAYER_NAME_LENGTH = 32;
@@ -19,7 +20,7 @@ const NUM_COINS = 100;
   (i.e. it requires callbacks)
 */
 
-redis.on("error", function (error) {
+redis.on('error', (error) => {
   console.error(`Error: ${error}`);
 });
 
@@ -56,7 +57,6 @@ redis.on("error", function (error) {
 
 
 exports.addPlayer = (name, callback) => {     
-  
   redis.sismember('usednames', name, (error, result) => {
     if (error) {
       callback(error);
@@ -122,11 +122,11 @@ exports.state = (callback) => {
           scores = evenArrayToObject(scores);
 
           redis.hgetall('coins', (error, coins) => {
-              if (error) {
-                console.log("here4");
-                callback(error);
-              }
-              return callback(null, { positions, scores, coins });
+            if (error) {
+              console.log("here4");
+              callback(error);
+            }
+            return callback(null, { positions, scores, coins });
           });
         });
       });
@@ -142,11 +142,11 @@ exports.state = (callback) => {
         scores = evenArrayToObject(scores);
 
         redis.hgetall('coins', (error, coins) => {
-            if (error) {
-              console.log("here4");
-              callback(error);
-            }
-            return callback(null, { scores, coins });
+          if (error) {
+            console.log("here4");
+            callback(error);
+          }
+          return callback(null, { scores, coins });
         });
       });
     }
@@ -167,26 +167,26 @@ exports.move = (direction, name, callback) => {
         const [x, y] = position.split(',');
         const [newX, newY] = [clamp(+x + delta[0], 0, WIDTH - 1), clamp(+y + delta[1], 0, HEIGHT - 1)];
         redis.hget('coins', `${newX},${newY}`, (error, value) => {
+          if (error) {
+            callback(error);
+          }
+          if (value) {
+            redis.zincrby('scores', value, name);
+            redis.hdel('coins', `${newX},${newY}`);
+          }
+          redis.set(`player:${name}`, `${newX},${newY}`);
+          redis.expire(`player:${name}`, 30);
+
+          // When all coins collected, generate a new batch.
+          redis.hgetall('coins', (error, coins) => {
             if (error) {
               callback(error);
+            } 
+            if (Object.keys(coins).length === 0) {
+              placeCoins();
             }
-            if (value) {
-              redis.zincrby('scores', value, name);
-              redis.hdel('coins', `${newX},${newY}`);
-            }
-            redis.set(`player:${name}`, `${newX},${newY}`);
-            redis.expire(`player:${name}`, 30);
-
-            // When all coins collected, generate a new batch.
-            redis.hgetall('coins', (error, coins) => {
-              if (error) {
-                callback(error);
-              } 
-              if (Object.keys(coins).length === 0) {
-                placeCoins();
-              }
-              callback(null);
-            }); 
+            callback(null);
+          }); 
         });
       } else {
         callback(null);

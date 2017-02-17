@@ -11,3 +11,18 @@ rules:
     off
   no-nested-ternary:
     off
+  no-trailing-spaces:
+    off
+  comma-spacing:
+    off
+  quotes:
+    off
+  prefer-const:
+    off
+  no-shadow:
+    off
+  max-len:
+    - error
+    - 120
+  no-param-reassign:
+    off

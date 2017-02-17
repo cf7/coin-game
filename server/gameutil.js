@@ -16,23 +16,22 @@ exports.permutation = (n) => {
 };
 
 exports.zip = (list1, list2) => {
-    let newlist = [];
-    list1.forEach((element, index) => {
-        newlist.push([element, list2[index]]);
-    });
-    return newlist;
+  let newlist = [];
+  list1.forEach((element, index) => {
+    newlist.push([element, list2[index]]);
+  });
+  return newlist;
 };
 
 exports.evenArrayToObject = (array) => {
-    if (array.length === 0) {
-        return {};
-    } else if ((array.length % 2) !== 0) {
-        return null;
-    } else {
-      let result = {};
-      for (let i = 0; i + 2 <= array.length; i += 2) {
-        result[array[i]] = array[i + 1];
-      }
-      return result;
-    }
+  if (array.length === 0) {
+    return {};
+  } else if ((array.length % 2) !== 0) {
+    return null;
+  }
+  let result = {};
+  for (let i = 0; i + 2 <= array.length; i += 2) {
+    result[array[i]] = array[i + 1];
+  }
+  return result;
 };
