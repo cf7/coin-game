@@ -56,7 +56,7 @@ redis.on('error', (error) => {
 //
 
 
-exports.addPlayer = (name, callback) => {     
+exports.addPlayer = (name, callback) => {
   redis.sismember('usednames', name, (error, result) => {
     if (error) {
       callback(error);
@@ -68,10 +68,10 @@ exports.addPlayer = (name, callback) => {
       redis.set(`player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
 
       redis.zadd('scores', 0, name);
-      
+
       callback(null, true);
     }
-  }); 
+  });
 };
 
 function placeCoins() {
@@ -86,8 +86,6 @@ function placeCoins() {
     if (error) {
       throw error;
     }
-    console.log("Successfully placed coins? ======");
-    console.log(result);
   });
 }
 
@@ -98,32 +96,24 @@ function placeCoins() {
 exports.state = (callback) => {
   redis.keys('player:*', (error, players) => {
     if (error) {
-      console.log("here1");
       callback(error);
     }
 
     if (players.length !== 0) {
       redis.mget(players, (error, values) => {
         if (error) {
-          console.log("here2");
           callback(error);
         }
-        console.log("positions");
-        console.log(values);
         let positions = zip(players, values).map(([key, value]) => [key.substring(7), value]);
         redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
           if (error) {
-            console.log("here3");
             callback(error);
           }
-          console.log("scores");
-          console.log(scores);
 
           scores = evenArrayToObject(scores);
 
           redis.hgetall('coins', (error, coins) => {
             if (error) {
-              console.log("here4");
               callback(error);
             }
             return callback(null, { positions, scores, coins });
@@ -133,17 +123,13 @@ exports.state = (callback) => {
     } else {
       redis.zrevrange(['scores', 0, -1, 'WITHSCORES'], (error, scores) => {
         if (error) {
-          console.log("here3");
           callback(error);
         }
-        console.log("scores");
-        console.log(scores);
 
         scores = evenArrayToObject(scores);
 
         redis.hgetall('coins', (error, coins) => {
           if (error) {
-            console.log("here4");
             callback(error);
           }
           return callback(null, { scores, coins });
@@ -154,11 +140,8 @@ exports.state = (callback) => {
 };
 
 exports.move = (direction, name, callback) => {
-  console.log(direction);
   const delta = { U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0] }[direction];
   if (delta) {
-    console.log("NAME!!!!!");
-    console.log(name);
     redis.get(`player:${name}`, (error, position) => {
       if (error) {
         callback(error);
@@ -181,12 +164,12 @@ exports.move = (direction, name, callback) => {
           redis.hgetall('coins', (error, coins) => {
             if (error) {
               callback(error);
-            } 
+            }
             if (Object.keys(coins).length === 0) {
               placeCoins();
             }
             callback(null);
-          }); 
+          });
         });
       } else {
         callback(null);
@@ -196,8 +179,3 @@ exports.move = (direction, name, callback) => {
 };
 
 placeCoins();
-
-redis.smembers("usednames", (error, names) => {
-  console.log("usednames");
-  console.log(names);
-});
